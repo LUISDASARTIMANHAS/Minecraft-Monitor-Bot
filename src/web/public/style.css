@@ -1,0 +1,28 @@
+body {
+	background: #0f172a;
+	color: white;
+}
+
+.card {
+	background: #1e293b;
+	color: white;
+	border: none;
+	border-radius: 16px;
+}
+
+.inventory-item {
+	background: #334155;
+	color: white;
+	padding: 10px;
+	border-radius: 10px;
+	margin-bottom: 8px;
+}
+
+#chatBox {
+	height: 200px;
+	overflow-y: auto;
+	color: white;
+	background: #0f172a;
+	border-radius: 10px;
+	padding: 10px;
+}
