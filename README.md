@@ -1,4 +1,4 @@
-# Minecraft Monitor Bot
+# Minecraft Assistente AO
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
