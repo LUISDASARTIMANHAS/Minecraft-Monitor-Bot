@@ -6,15 +6,13 @@ const state = require("../state/botState");
  * @param {import('http').Server} server
  */
 module.exports = function setupSocket(server) {
-
 	const io = new Server(server, {
 		cors: {
-			origin: "*"
-		}
+			origin: "*",
+		},
 	});
 
 	io.on("connection", (socket) => {
-
 		console.log("[WEB] Cliente conectado");
 
 		/*
@@ -37,11 +35,9 @@ module.exports = function setupSocket(server) {
 		*/
 
 		socket.on("chat", (message) => {
-
 			if (!message?.trim()) return;
 
 			bot.chat(message);
-
 		});
 
 		/*
@@ -51,13 +47,11 @@ module.exports = function setupSocket(server) {
 		*/
 
 		const onChat = (username, message) => {
-
 			socket.emit("chatMessage", {
 				username,
 				message,
-				time: Date.now()
+				time: Date.now(),
 			});
-
 		};
 
 		bot.on("chat", onChat);
@@ -69,11 +63,9 @@ module.exports = function setupSocket(server) {
 		*/
 
 		const statusInterval = setInterval(() => {
-
 			if (!bot.entity) return;
 
 			socket.emit("statusUpdate", {
-
 				health: bot.health,
 
 				food: bot.food,
@@ -83,11 +75,9 @@ module.exports = function setupSocket(server) {
 				position: {
 					x: bot.entity.position.x.toFixed(2),
 					y: bot.entity.position.y.toFixed(2),
-					z: bot.entity.position.z.toFixed(2)
-				}
-
+					z: bot.entity.position.z.toFixed(2),
+				},
 			});
-
 		}, 1000);
 
 		/*
@@ -97,25 +87,22 @@ module.exports = function setupSocket(server) {
 		*/
 
 		const sendInventory = () => {
-
 			socket.emit(
 				"inventoryUpdate",
 
-				bot.inventory.items().map(item => ({
+				bot.inventory.items().map((item) => ({
 					name: item.name,
 					count: item.count,
-					slot: item.slot
-				}))
+					slot: item.slot,
+				})),
 			);
-
 		};
 
-		bot.inventory.on(
-			"updateSlot",
-			sendInventory
-		);
+		if (bot.inventory) {
+			bot.inventory.on("updateSlot", sendInventory);
 
-		sendInventory();
+			sendInventory();
+		}
 
 		/*
 		|--------------------------------------------------------------------------
@@ -124,25 +111,13 @@ module.exports = function setupSocket(server) {
 		*/
 
 		socket.on("disconnect", () => {
-
-			console.log(
-				"[WEB] Cliente desconectado"
-			);
+			console.log("[WEB] Cliente desconectado");
 
 			clearInterval(statusInterval);
 
-			bot.removeListener(
-				"chat",
-				onChat
-			);
+			bot.removeListener("chat", onChat);
 
-			bot.inventory.removeListener(
-				"updateSlot",
-				sendInventory
-			);
-
+			bot.inventory.removeListener("updateSlot", sendInventory);
 		});
-
 	});
-
 };

@@ -18,6 +18,6 @@ module.exports = function reconnect(bot) {
 
       createBot();
 
-    }, 5000);
+    }, 10*1000);
   });
 };

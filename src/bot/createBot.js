@@ -49,6 +49,10 @@ async function createBot() {
     username: config.minecraft.username,
 
     version: config.minecraft.version,
+
+    physicsEnabled: true,
+
+    checkTimeoutInterval: 60_000,
   });
 
   setupReconnect(bot);
