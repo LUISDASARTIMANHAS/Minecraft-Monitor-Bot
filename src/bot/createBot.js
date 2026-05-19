@@ -3,6 +3,7 @@ const { mineflayer: viewer } = require("prismarine-viewer");
 
 const config = require("../config");
 
+const state = require("../state/botState");
 const antiAfk = require("./antiAfk");
 const movement = require("./movement");
 const setupReconnect = require("./reconnect");
@@ -13,67 +14,61 @@ const setupCommands = require("./commands");
  * @returns {import('mineflayer').Bot}
  */
 function createBot() {
-	const bot = mineflayer.createBot({
-		host: config.minecraft.host,
-		port: config.minecraft.port,
-		username: config.minecraft.username,
-		version: config.minecraft.version,
-	});
+  const bot = mineflayer.createBot({
+    host: config.minecraft.host,
+    port: config.minecraft.port,
+    username: config.minecraft.username,
+    version: config.minecraft.version,
+  });
 
-	setupReconnect(bot);
+  setupReconnect(bot);
 
-	bot.once("spawn", () => {
-		console.log("[BOT] Spawnado");
+  bot.once("spawn", () => {
+    console.log("[BOT] Spawnado");
 
-		viewer(bot, {
-			port: config.viewer.port,
-			firstPerson: true,
-			host: "::",
-		});
+    viewer(bot, {
+      port: config.viewer.port,
+      firstPerson: true,
+      host: "::",
+    });
 
-		console.log(`[VIEWER] http://localhost:${config.viewer.port}`);
+    console.log(`[VIEWER] http://localhost:${config.viewer.port}`);
 
-		antiAfk(bot);
-		movement(bot);
-		setupCommands(bot);
+    antiAfk(bot);
+    movement(bot);
+    setupCommands(bot);
 
-		monitorPosition(bot);
-		bot.chat("Monitor online");
-	});
+    bot.chat("Monitor online");
+  });
 
-	bot.on("chat", (username, message) => {
-		console.log(`[CHAT] ${username}: ${message}`);
-	});
 
-	bot.on("health", () => {
-		console.log(`[STATUS] Vida=${bot.health} Food=${bot.food}`);
-	});
+  bot.on("chat", (username, message) => {
+    const chatMessage = {
+      username,
+      message,
+      time: Date.now(),
+    };
 
-	bot.on("kicked", console.log);
+    console.log(`[CHAT] ${username}: ${message}`);
 
-	bot.on("error", (err) => {
-		console.error("[ERROR]", err.message);
-	});
+    state.chat.push(chatMessage);
 
-	return bot;
-}
+    if (state.chat.length > 100) {
+      state.chat.shift();
+    }
+  });
 
-/**
- * Monitora posição do bot
- * Detecta quedas, prisão ou travamento
- *
- * @param {import('mineflayer').Bot} bot
- */
-function monitorPosition(bot) {
-	setInterval(() => {
-		if (!bot.entity) return;
+  bot.on("health", () => {
+    console.log(`[STATUS] Vida=${bot.health} Food=${bot.food}`);
+  });
 
-		const pos = bot.entity.position;
+  bot.on("kicked", console.log);
 
-		console.log(
-			`[POS] X=${pos.x.toFixed(2)} Y=${pos.y.toFixed(2)} Z=${pos.z.toFixed(2)}`,
-		);
-	}, 10000);
+  bot.on("error", (err) => {
+    console.error("[ERROR]", err.message);
+  });
+
+  return bot;
 }
 
 module.exports = createBot;
