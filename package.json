@@ -1,0 +1,17 @@
+{
+  "name": "minecraft-monitor-bot",
+  "version": "1.0.0",
+  "description": "Bot de monitoramento Minecraft com Mineflayer",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "dotenv": "^17.4.2",
+    "mineflayer": "^4.37.1",
+    "prismarine-viewer": "^1.33.0"
+  }
+}
