@@ -40,19 +40,53 @@ async function createBot() {
 	| BOT
 	|--------------------------------------------------------------------------
 	*/
+  console.log("======================================");
+  console.log("[BOT] Criando conexão...");
+  console.log("[BOT] Configuração:");
+
+  console.table({
+    host: config.minecraft.host,
+    port: config.minecraft.port,
+    username: config.minecraft.username,
+    version: config.minecraft.version || "auto",
+    physicsEnabled: true,
+    checkTimeoutInterval: 60000,
+  });
 
   const bot = mineflayer.createBot({
     host: config.minecraft.host,
-
     port: config.minecraft.port,
-
     username: config.minecraft.username,
-
     version: config.minecraft.version,
-
     physicsEnabled: true,
+    checkTimeoutInterval: 60000,
+  });
 
-    checkTimeoutInterval: 60_000,
+  console.log("[BOT] Instância criada");
+  console.log("======================================");
+
+  bot._client.on("connect", () => {
+    console.log("[CLIENT] TCP conectado");
+  });
+
+  bot._client.on("session", () => {
+    console.log("[CLIENT] Sessão iniciada");
+  });
+
+  bot._client.on("state", (state) => {
+    console.log("[CLIENT] Estado:", state);
+  });
+
+  bot._client.on("disconnect", (packet) => {
+    console.log("[CLIENT] Disconnect:", packet);
+  });
+
+  bot._client.on("end", (reason) => {
+    console.log("[CLIENT] End:", reason);
+  });
+
+  bot._client.on("error", (err) => {
+    console.error("[CLIENT] Error:", err);
   });
 
   setupReconnect(bot);
@@ -121,10 +155,26 @@ async function createBot() {
 	|--------------------------------------------------------------------------
 	*/
 
-  bot.on("kicked", console.log);
+  bot.on("login", () => {
+    console.log("[BOT] Login");
+  });
+
+  bot.on("spawn", () => {
+    console.log("[BOT] Spawn");
+  });
+
+  bot.on("end", (reason) => {
+    console.log("[BOT] End:", reason);
+  });
+
+  bot.on("kicked", (reason, loggedIn) => {
+    console.log("[BOT] KICK");
+    console.log(reason);
+    console.log("loggedIn:", loggedIn);
+  });
 
   bot.on("error", (err) => {
-    console.error("[ERROR]", err.message);
+    console.error(err);
   });
 
   return bot;

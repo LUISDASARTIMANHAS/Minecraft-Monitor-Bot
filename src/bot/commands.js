@@ -8,11 +8,11 @@ module.exports = function commands(bot) {
 		console.log("[MSG]", message);
 
 		if (message.includes("/register")) {
-			bot.chat("/register senha123 senha123");
+			// bot.chat("/register alex senha123");
 		}
 
 		if (message.includes("/login")) {
-			bot.chat("/login senha123");
+			// bot.chat("/login alex2026");
 		}
 	});
 };

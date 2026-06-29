@@ -21,7 +21,7 @@ module.exports = function setupSocket(server) {
 		|--------------------------------------------------------------------------
 		*/
 
-		const bot = state.bot;
+		const getBot = () => state.bot;
 
 		if (!bot) {
 			console.log("[WEB] Bot inexistente");
@@ -115,9 +115,15 @@ module.exports = function setupSocket(server) {
 
 			clearInterval(statusInterval);
 
-			bot.removeListener("chat", onChat);
+			const bot = getBot();
 
-			bot.inventory.removeListener("updateSlot", sendInventory);
+			if (bot?.removeListener) {
+				bot.removeListener("chat", onChat);
+			}
+
+			if (bot?.inventory?.removeListener) {
+				bot.inventory.removeListener("updateSlot", sendInventory);
+			}
 		});
 	});
 };

@@ -6,7 +6,7 @@ require("dotenv").config();
 module.exports = {
 	minecraft: {
 		host: process.env.MC_HOST,
-		port: Number(process.env.MC_PORT),
+		port: Number(process.env.MC_PORT||25565),
 		username: process.env.MC_USERNAME,
 		version: false
 	},

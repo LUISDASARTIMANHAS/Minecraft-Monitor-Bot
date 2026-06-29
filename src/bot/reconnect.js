@@ -4,8 +4,8 @@
  * @param {import('mineflayer').Bot} bot
  */
 module.exports = function reconnect(bot) {
-  bot.on("end", () => {
-    console.log("[BOT] Desconectado");
+  bot.on("end", (reason) => {
+    console.log("[BOT] Desconectado",reason);
 
     setTimeout(() => {
       console.log("[BOT] Reconectando...");
