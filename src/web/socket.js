@@ -1,129 +1,115 @@
 const { Server } = require("socket.io");
-
 const state = require("../state/botState");
 
-/**
- * @param {import('http').Server} server
- */
+function getSnapshot() {
+  const bot = state.bot;
+
+  return {
+    system: {
+      status: state.status,
+      error: state.lastError,
+      disconnectReason: state.lastDisconnectReason || null,
+      time: Date.now(),
+    },
+
+    bot: {
+      online: !!bot,
+      inGame: !!bot?.entity,
+      health: bot?.health ?? null,
+      food: bot?.food ?? null,
+      level: bot?.experience?.level ?? null,
+
+      position: bot?.entity
+        ? {
+            x: bot.entity.position.x.toFixed(2),
+            y: bot.entity.position.y.toFixed(2),
+            z: bot.entity.position.z.toFixed(2),
+          }
+        : null,
+
+      inventory: bot?.inventory
+        ? bot.inventory.items().map((item) => ({
+            name: item.name,
+            count: item.count,
+            slot: item.slot,
+          }))
+        : [],
+    },
+  };
+}
+
 module.exports = function setupSocket(server) {
-	const io = new Server(server, {
-		cors: {
-			origin: "*",
-		},
-	});
+  const io = new Server(server, {
+    cors: { origin: "*" },
+  });
 
-	io.on("connection", (socket) => {
-		console.log("[WEB] Cliente conectado");
+  io.on("connection", (socket) => {
+    console.log("[socket.io] Cliente conectado");
 
-		/*
-		|--------------------------------------------------------------------------
-		| BOT
-		|--------------------------------------------------------------------------
-		*/
+    /*
+    |--------------------------------------------------------------------------
+    | CHAT -> MC
+    |--------------------------------------------------------------------------
+    */
+    socket.on("chat", (message) => {
+      const bot = state.bot;
 
-		const getBot = () => state.bot;
+      if (!bot?.chat) {
+        console.log("[socket.io] Bot ainda não pronto");
+        return;
+      }
 
-		if (!bot) {
-			console.log("[WEB] Bot inexistente");
-			return;
-		}
+      if (!message?.trim()) return;
 
-		/*
-		|--------------------------------------------------------------------------
-		| CHAT WEB -> MC
-		|--------------------------------------------------------------------------
-		*/
+      bot.chat(message);
+    });
 
-		socket.on("chat", (message) => {
-			if (!message?.trim()) return;
+    /*
+    |--------------------------------------------------------------------------
+    | CHAT MC -> FRONT
+    |--------------------------------------------------------------------------
+    */
+    const onChat = (username, message) => {
+      socket.emit("chatMessage", {
+        username,
+        message,
+        time: Date.now(),
+      });
+    };
 
-			bot.chat(message);
-		});
+    const bindChat = () => {
+      const bot = state.bot;
+      if (!bot?.on) return;
 
-		/*
-		|--------------------------------------------------------------------------
-		| CHAT MC -> WEB
-		|--------------------------------------------------------------------------
-		*/
+      bot.on("chat", onChat);
+    };
 
-		const onChat = (username, message) => {
-			socket.emit("chatMessage", {
-				username,
-				message,
-				time: Date.now(),
-			});
-		};
+    bindChat();
 
-		bot.on("chat", onChat);
+    /*
+    |--------------------------------------------------------------------------
+    | SNAPSHOT LOOP
+    |--------------------------------------------------------------------------
+    */
+    const interval = setInterval(() => {
+      socket.emit("snapshot", getSnapshot());
+    }, 1000);
 
-		/*
-		|--------------------------------------------------------------------------
-		| STATUS LOOP
-		|--------------------------------------------------------------------------
-		*/
+    /*
+    |--------------------------------------------------------------------------
+    | DISCONNECT
+    |--------------------------------------------------------------------------
+    */
+    socket.on("disconnect", () => {
+      console.log("[socket.io] Cliente desconectado");
 
-		const statusInterval = setInterval(() => {
-			if (!bot.entity) return;
+      clearInterval(interval);
 
-			socket.emit("statusUpdate", {
-				health: bot.health,
+      const bot = state.bot;
 
-				food: bot.food,
-
-				level: bot.experience.level,
-
-				position: {
-					x: bot.entity.position.x.toFixed(2),
-					y: bot.entity.position.y.toFixed(2),
-					z: bot.entity.position.z.toFixed(2),
-				},
-			});
-		}, 1000);
-
-		/*
-		|--------------------------------------------------------------------------
-		| INVENTORY
-		|--------------------------------------------------------------------------
-		*/
-
-		const sendInventory = () => {
-			socket.emit(
-				"inventoryUpdate",
-
-				bot.inventory.items().map((item) => ({
-					name: item.name,
-					count: item.count,
-					slot: item.slot,
-				})),
-			);
-		};
-
-		if (bot.inventory) {
-			bot.inventory.on("updateSlot", sendInventory);
-
-			sendInventory();
-		}
-
-		/*
-		|--------------------------------------------------------------------------
-		| DISCONNECT
-		|--------------------------------------------------------------------------
-		*/
-
-		socket.on("disconnect", () => {
-			console.log("[WEB] Cliente desconectado");
-
-			clearInterval(statusInterval);
-
-			const bot = getBot();
-
-			if (bot?.removeListener) {
-				bot.removeListener("chat", onChat);
-			}
-
-			if (bot?.inventory?.removeListener) {
-				bot.inventory.removeListener("updateSlot", sendInventory);
-			}
-		});
-	});
+      if (bot?.removeListener) {
+        bot.removeListener("chat", onChat);
+      }
+    });
+  });
 };

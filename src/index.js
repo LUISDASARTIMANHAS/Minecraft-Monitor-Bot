@@ -3,6 +3,6 @@ const startWebServer = require("./web/server");
 
 const state = require("./state/botState");
 
-state.bot = createBot();
-
 startWebServer();
+
+state.bot = createBot();

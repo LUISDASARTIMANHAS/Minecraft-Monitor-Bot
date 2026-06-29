@@ -1,23 +1,51 @@
-/**
- * Sistema de reconexão automática
- *
- * @param {import('mineflayer').Bot} bot
- */
-module.exports = function reconnect(bot) {
-  bot.on("end", (reason) => {
-    console.log("[BOT] Desconectado",reason);
+const state = require("../state/botState");
 
-    setTimeout(() => {
-      console.log("[BOT] Reconectando...");
+function getDelay(attempt) {
+  const base = 5000;
+  const max = 60000;
 
-      delete require.cache[
-        require.resolve("./createBot")
-      ];
+  return Math.min(base * Math.pow(2, attempt), max);
+}
 
-      const createBot = require("./createBot");
+module.exports = function setupReconnect(bot) {
+  bot.on("end", async (reason) => {
+    console.log("[BOT] Desconectado:", reason);
 
-      createBot();
+    state.setDisconnect(reason);
+    state.setStatus("offline");
 
-    }, 10*1000);
+    if (state.reconnectLock) return;
+    state.reconnectLock = true;
+
+    state.reconnectAttempts++;
+
+    const delay = getDelay(state.reconnectAttempts);
+
+    console.log(`[BOT] Reconectando em ${delay / 1000}s...`);
+
+    setTimeout(async () => {
+      try {
+        console.log("[BOT] Reiniciando bot...");
+
+        state.reset();
+
+        // 🔥 IMPORT CORRETO (SEM DESTRUCTURING)
+        const createBot = require("./createBot");
+
+        const newBot = await createBot();
+
+        state.bot = newBot;
+
+        state.reconnectLock = false;
+      } catch (err) {
+        console.error("[BOT] Falha no reconnect:", err);
+
+        state.reconnectLock = false;
+
+        setTimeout(() => {
+          setupReconnect(bot);
+        }, 5000);
+      }
+    }, delay);
   });
 };

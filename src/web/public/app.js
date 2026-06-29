@@ -1,17 +1,7 @@
 const socket = io();
 
-/*
-|--------------------------------------------------------------------------
-| ELEMENTOS
-|--------------------------------------------------------------------------
-*/
-
-const statusEl = document.getElementById("status");
-
 const inventoryEl = document.getElementById("inventory");
-
 const chatBox = document.getElementById("chatBox");
-
 const chatInput = document.getElementById("chatInput");
 
 /*
@@ -19,103 +9,136 @@ const chatInput = document.getElementById("chatInput");
 | CHAT INPUT
 |--------------------------------------------------------------------------
 */
-
 chatInput.addEventListener("keydown", (e) => {
-	if (e.key !== "Enter") return;
+  if (e.key !== "Enter") return;
 
-	const message = chatInput.value.trim();
+  const message = chatInput.value.trim();
+  if (!message) return;
 
-	if (!message) return;
-
-	socket.emit("chat", message);
-
-	chatInput.value = "";
+  socket.emit("chat", message);
+  chatInput.value = "";
 });
 
 /*
 |--------------------------------------------------------------------------
-| STATUS
+| SNAPSHOT (FULL UI)
 |--------------------------------------------------------------------------
 */
-socket.on("statusUpdate", (data) => {
-	document.getElementById("healthStat").innerText = data.health;
+socket.on("snapshot", (data) => {
+  const system = data.system;
+  const bot = data.bot;
 
-	document.getElementById("foodStat").innerText = data.food;
+  /*
+  |--------------------------------------------------------------------------
+  | SYSTEM STATUS
+  |--------------------------------------------------------------------------
+  */
+  const systemEl = document.getElementById("systemStatus");
 
-	document.getElementById("xpStat").innerText = data.level;
+  const map = {
+    offline: "OFFLINE",
+    connecting: "CONECTANDO",
+    login: "LOGIN",
+    ready: "ONLINE",
+    error: "ERRO",
+  };
 
-	document.getElementById("positionStat").innerHTML = `
-		X: ${data.position.x}<br>
-		Y: ${data.position.y}<br>
-		Z: ${data.position.z}
-	`;
+  systemEl.innerText = map[system.status] || "UNKNOWN";
+
+  /*
+  |--------------------------------------------------------------------------
+  | BOT FLAGS
+  |--------------------------------------------------------------------------
+  */
+  document.getElementById("onlineStat").innerText =
+    bot.online ? "SIM" : "NÃO";
+
+  document.getElementById("ingameStat").innerText =
+    bot.inGame ? "SIM" : "NÃO";
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATS
+  |--------------------------------------------------------------------------
+  */
+  document.getElementById("healthStat").innerText =
+    bot.health ?? "--";
+
+  document.getElementById("foodStat").innerText =
+    bot.food ?? "--";
+
+  document.getElementById("xpStat").innerText =
+    bot.level ?? "--";
+
+  /*
+  |--------------------------------------------------------------------------
+  | POSITION
+  |--------------------------------------------------------------------------
+  */
+  const pos = document.getElementById("positionStat");
+
+  if (bot.position) {
+    pos.innerHTML = `
+      X: ${bot.position.x}<br>
+      Y: ${bot.position.y}<br>
+      Z: ${bot.position.z}
+    `;
+  } else {
+    pos.innerText = "--";
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | INVENTORY
+  |--------------------------------------------------------------------------
+  */
+  inventoryEl.innerHTML = "";
+
+  (bot.inventory || []).forEach((item) => {
+    inventoryEl.innerHTML += `
+      <div class="inventory-item">
+        ${escapeHtml(item.name)} x${item.count}
+      </div>
+    `;
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | DEBUG (IMPORTANTE PRA VER SE TA CHEGANDO)
+  |--------------------------------------------------------------------------
+  */
+  console.log("[SNAPSHOT RECEBIDO]", data);
 });
 
 /*
 |--------------------------------------------------------------------------
-| INVENTÁRIO
+| CHAT MC -> FRONT
 |--------------------------------------------------------------------------
 */
-
-socket.on("inventoryUpdate", (inventory) => {
-	inventoryEl.innerHTML = "";
-
-	inventory.forEach((item) => {
-		inventoryEl.innerHTML += `
-			<div class="inventory-item">
-
-				${escapeHtml(item.name)}
-
-				x${item.count}
-
-			</div>
-		`;
-	});
-});
-
-/*
-|--------------------------------------------------------------------------
-| CHAT
-|--------------------------------------------------------------------------
-*/
-
 socket.on("chatMessage", (msg) => {
-	const time = new Date(msg.time).toLocaleTimeString();
+  const time = new Date(msg.time).toLocaleTimeString();
 
-	chatBox.innerHTML += `
-		<div class="chat-message">
+  chatBox.innerHTML += `
+    <div class="chat-message">
+      <span class="chat-time">[${time}]</span>
+      <b>${escapeHtml(msg.username)}</b>:
+      ${escapeHtml(msg.message)}
+    </div>
+  `;
 
-			<span class="chat-time">
-				[${time}]
-			</span>
-
-			<b>
-				${escapeHtml(msg.username)}
-			</b>:
-
-			${escapeHtml(msg.message)}
-
-		</div>
-	`;
-
-	chatBox.scrollTop = chatBox.scrollHeight;
+  chatBox.scrollTop = chatBox.scrollHeight;
 });
 
 /*
 |--------------------------------------------------------------------------
-| XSS Protection
+| SAFE HTML
 |--------------------------------------------------------------------------
 */
-
-/**
- * @param {string} unsafe
- * @returns {string}
- */
-function escapeHtml(unsafe) {
-	return String(unsafe)
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;")
-		.replaceAll("'", "&#039;");
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }

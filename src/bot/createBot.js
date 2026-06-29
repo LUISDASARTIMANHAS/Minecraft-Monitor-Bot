@@ -1,45 +1,21 @@
 const mineflayer = require("mineflayer");
-
 const { mineflayer: viewer } = require("prismarine-viewer");
-
 const { pathfinder } = require("mineflayer-pathfinder");
-
 const pvp = require("mineflayer-pvp").plugin;
-
 const collectBlock = require("mineflayer-collectblock").plugin;
 
 const state = require("../state/botState");
-
 const config = require("../config");
 
 const antiAfk = require("./antiAfk");
-
 const movement = require("./movement");
-
 const setupReconnect = require("./reconnect");
-
 const setupCommands = require("./commands");
 
-/**
- * Cria bot
- *
- * @returns {Promise<import('mineflayer').Bot>}
- */
 async function createBot() {
-  /*
-	|--------------------------------------------------------------------------
-	| IMPORT ESM
-	|--------------------------------------------------------------------------
-	*/
-
   const autoEatModule = await import("mineflayer-auto-eat");
   const autoEat = autoEatModule.loader;
 
-  /*
-	|--------------------------------------------------------------------------
-	| BOT
-	|--------------------------------------------------------------------------
-	*/
   console.log("======================================");
   console.log("[BOT] Criando conexão...");
   console.log("[BOT] Configuração:");
@@ -65,116 +41,94 @@ async function createBot() {
   console.log("[BOT] Instância criada");
   console.log("======================================");
 
-  bot._client.on("connect", () => {
-    console.log("[CLIENT] TCP conectado");
-  });
-
-  bot._client.on("session", () => {
-    console.log("[CLIENT] Sessão iniciada");
-  });
-
-  bot._client.on("state", (state) => {
-    console.log("[CLIENT] Estado:", state);
-  });
-
-  bot._client.on("disconnect", (packet) => {
-    console.log("[CLIENT] Disconnect:", packet);
-  });
-
-  bot._client.on("end", (reason) => {
-    console.log("[CLIENT] End:", reason);
-  });
-
-  bot._client.on("error", (err) => {
-    console.error("[CLIENT] Error:", err);
-  });
+  /*
+  |--------------------------------------------------------------------------
+  | CLIENT DEBUG
+  |--------------------------------------------------------------------------
+  */
+  bot._client.on("connect", () => console.log("[CLIENT] TCP conectado"));
+  bot._client.on("session", () => console.log("[CLIENT] Sessão iniciada"));
+  bot._client.on("state", (s) => console.log("[CLIENT] Estado:", s));
+  bot._client.on("disconnect", (p) => console.log("[CLIENT] Disconnect:", p));
+  bot._client.on("end", (r) => console.log("[CLIENT] End:", r));
+  bot._client.on("error", (e) => console.error("[CLIENT] Error:", e));
 
   setupReconnect(bot);
 
   /*
-	|--------------------------------------------------------------------------
-	| PLUGINS
-	|--------------------------------------------------------------------------
-	*/
-
+  |--------------------------------------------------------------------------
+  | PLUGINS
+  |--------------------------------------------------------------------------
+  */
   bot.loadPlugin(pathfinder);
-
   bot.loadPlugin(pvp);
-
   bot.loadPlugin(autoEat);
-
   bot.loadPlugin(collectBlock);
 
   /*
-	|--------------------------------------------------------------------------
-	| STATE
-	|--------------------------------------------------------------------------
-	*/
-
+  |--------------------------------------------------------------------------
+  | STATE
+  |--------------------------------------------------------------------------
+  */
   state.bot = bot;
+  state.setStatus("connecting");
 
   /*
-	|--------------------------------------------------------------------------
-	| SPAWN
-	|--------------------------------------------------------------------------
-	*/
-
+  |--------------------------------------------------------------------------
+  | SPAWN
+  |--------------------------------------------------------------------------
+  */
   bot.once("spawn", () => {
     console.log(`[VIEWER] http://localhost:${config.viewer.port}`);
-
     console.log("[BOT] Spawnado");
+
+    // ✅ RESET DO RECONNECT AQUI (IMPORTANTE)
+    state.reconnectAttempts = 0;
+    state.reconnectLock = false;
 
     viewer(bot, {
       port: config.viewer.port,
-
       firstPerson: true,
-
       host: "::",
     });
 
     bot.autoEat.options = {
       priority: "foodPoints",
-
       startAt: 14,
-
       bannedFood: [],
     };
 
     antiAfk(bot);
-
     movement(bot);
-
     setupCommands(bot);
 
     bot.chat("Assistente online");
   });
 
   /*
-	|--------------------------------------------------------------------------
-	| EVENTS
-	|--------------------------------------------------------------------------
-	*/
+  |--------------------------------------------------------------------------
+  | LIFECYCLE
+  |--------------------------------------------------------------------------
+  */
+  bot.on("login", () => state.setStatus("login"));
 
-  bot.on("login", () => {
-    console.log("[BOT] Login");
-  });
-
-  bot.on("spawn", () => {
-    console.log("[BOT] Spawn");
-  });
+  bot.on("spawn", () => state.setStatus("ready"));
 
   bot.on("end", (reason) => {
+    state.setStatus("offline");
+    state.setDisconnect(reason);
     console.log("[BOT] End:", reason);
   });
 
-  bot.on("kicked", (reason, loggedIn) => {
-    console.log("[BOT] KICK");
-    console.log(reason);
-    console.log("loggedIn:", loggedIn);
+  bot.on("kicked", (reason) => {
+    state.setStatus("offline");
+    state.setDisconnect(reason);
+    console.log("[BOT] KICK:", reason);
   });
 
   bot.on("error", (err) => {
-    console.error(err);
+    state.setError(err);
+    console.error("[BOT ERROR]", err);
   });
 
   return bot;

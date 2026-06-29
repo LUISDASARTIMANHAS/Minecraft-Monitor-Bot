@@ -12,7 +12,7 @@ module.exports = function commands(bot) {
 		}
 
 		if (message.includes("/login")) {
-			// bot.chat("/login alex2026");
+			bot.chat("/login alex2026");
 		}
 	});
 };
