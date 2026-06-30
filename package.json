@@ -5,8 +5,9 @@
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "start": "node index.js",
+    "update": "npm-check-updates -u && npm install",
+    "dev": "node --watch index.js"
   },
   "dependencies": {
     "canvas": "^3.2.3",
