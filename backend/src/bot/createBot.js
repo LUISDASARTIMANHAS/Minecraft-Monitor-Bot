@@ -1,16 +1,33 @@
 const mineflayer = require("mineflayer");
 const { mineflayer: viewer } = require("prismarine-viewer");
-const { pathfinder } = require("mineflayer-pathfinder");
+
+// plugins
+const armorManager = require("mineflayer-armor-manager");
+const pathfinder = require("mineflayer-pathfinder").pathfinder;
+const Movements = require("mineflayer-pathfinder").Movements;
+const { GoalNear } = require("mineflayer-pathfinder").goals;
 const pvp = require("mineflayer-pvp").plugin;
 const collectBlock = require("mineflayer-collectblock").plugin;
+const minerPlugin = require("./plugins/minerPlugin");
+const crafterPlugin = require("./plugins/crafterPlugin");
+const {
+  StateTransition,
+  BotStateMachine,
+  EntityFilters,
+  BehaviorFollowEntity,
+  BehaviorLookAtEntity,
+  BehaviorGetClosestEntity,
+  NestedStateMachine,
+} = require("mineflayer-statemachine");
 
 const state = require("../state/botState");
 const config = require("../../config");
 
-const antiAfk = require("./antiAfk");
+const antiAfk = require("./plugins/antiAfk");
 const movement = require("./movement");
 const setupReconnect = require("./reconnect");
 const setupCommands = require("./commands");
+const brain = require("../ai/brain");
 
 async function createBot() {
   const autoEatModule = await import("mineflayer-auto-eat");
@@ -58,13 +75,29 @@ async function createBot() {
   /*
   |--------------------------------------------------------------------------
   | PLUGINS
+  Os plugins e módulos adicionais do Mineflayer servem para expandir as capacidades nativas do bot
   |--------------------------------------------------------------------------
   */
-  bot.loadPlugin(pathfinder);
-  bot.loadPlugin(pvp);
-  bot.loadPlugin(autoEat);
-  bot.loadPlugin(collectBlock);
+  const plugins = [
+    pathfinder,
+    autoEat,
+    pvp,
+    collectBlock,
+    armorManager,
+    antiAfk,
+    minerPlugin,
+    crafterPlugin,
+  ];
+  console.log("[BOT] Carregando plugins...");
+  for (const plugin of plugins) {
+    console.log(
+      "[BOT] Carregando plugin: ",
+      plugin.name || plugin.constructor.name,
+    );
+    bot.loadPlugin(plugin);
+  }
 
+  console.log("[BOT] Plugins carregados!");
   /*
   |--------------------------------------------------------------------------
   | STATE
@@ -102,7 +135,8 @@ async function createBot() {
     movement(bot);
     setupCommands(bot);
 
-    bot.chat("Assistente online");
+    bot.chat("Oi");
+    brain(bot);
   });
 
   /*

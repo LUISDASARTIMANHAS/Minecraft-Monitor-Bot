@@ -1,58 +1,71 @@
-const collectWood = require("../skills/wood/collectWood");
-
-const craftWoodPickaxe = require("../skills/crafting/craftWoodPickaxe");
-
-const mineStone = require("../skills/mining/mineStone");
+const goalManager = require("./goalManager");
 
 /**
- * @param {import('mineflayer').Bot} bot
+ * Decide qual deve ser o próximo objetivo da IA.
+ *
+ * Este módulo NÃO executa ações.
+ * Apenas define um objetivo para o planner executar.
+ *
+ * @param {import("mineflayer").Bot} bot
+ * @returns {string|null}
  */
-module.exports = async function survival(bot) {
+module.exports = function survival(bot) {
 	/*
 	|--------------------------------------------------------------------------
-	| SEM MADEIRA
+	| Já existe um objetivo em execução
 	|--------------------------------------------------------------------------
 	*/
 
-	const hasLogs = bot.inventory.items().some((i) => i.name.includes("log"));
+	if (goalManager.isRunning()) {
+		return goalManager.get();
+	}
+
+	const items = bot.inventory.items();
+
+	/*
+	|--------------------------------------------------------------------------
+	| Madeira
+	|--------------------------------------------------------------------------
+	*/
+
+	const hasLogs = items.some((item) => item.name.includes("log"));
 
 	if (!hasLogs) {
-		console.log("[AI] Coletando madeira");
-
-		await collectWood(bot);
-
-		return;
+		goalManager.set("collect_logs");
+		return goalManager.get();
 	}
 
 	/*
 	|--------------------------------------------------------------------------
-	| SEM PICARETA
+	| Picareta de madeira
 	|--------------------------------------------------------------------------
 	*/
 
-	const hasPickaxe = bot.inventory
-		.items()
-		.some((i) => i.name === "wooden_pickaxe");
+	const hasWoodPickaxe = items.some((item) => item.name === "wooden_pickaxe");
 
-	if (!hasPickaxe) {
-		console.log("[AI] Craftando picareta");
-
-		await craftWoodPickaxe(bot);
-
-		return;
+	if (!hasWoodPickaxe) {
+		goalManager.set("craft_wooden_pickaxe");
+		return goalManager.get();
 	}
 
 	/*
 	|--------------------------------------------------------------------------
-	| PEGAR PEDRA
+	| Pedra
 	|--------------------------------------------------------------------------
 	*/
 
-	const hasCobble = bot.inventory.items().some((i) => i.name === "cobblestone");
+	const hasCobblestone = items.some((item) => item.name === "cobblestone");
 
-	if (!hasCobble) {
-		console.log("[AI] Minerando pedra");
-
-		await mineStone(bot);
+	if (!hasCobblestone) {
+		goalManager.set("mine_cobblestone");
+		return goalManager.get();
 	}
+
+	/*
+	|--------------------------------------------------------------------------
+	| Nenhum objetivo
+	|--------------------------------------------------------------------------
+	*/
+
+	return null;
 };

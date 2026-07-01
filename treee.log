@@ -1,0 +1,45 @@
+Minecraft-Monitor-Bot
+├── LICENSE
+├── README.md
+├── backend
+│   ├── config.js
+│   ├── socket.js
+│   └── src
+│       ├── ai
+│       │   ├── brain.js
+│       │   ├── goalManager.js
+│       │   ├── planner.js
+│       │   ├── skills
+│       │   │   ├── crafting
+│       │   │   │   └── craftWoodPickaxe.js
+│       │   │   ├── mining
+│       │   │   │   └── mineBlock.js
+│       │   │   └── wood
+│       │   │       └── collectWood.js
+│       │   ├── survival.js
+│       │   └── tasks
+│       │       ├── craftItem.js
+│       │       └── recipes.js
+│       ├── bot
+│       │   ├── antiAfk.js
+│       │   ├── commands.js
+│       │   ├── createBot.js
+│       │   ├── inventory.js
+│       │   ├── movement.js
+│       │   ├── reconnect.js
+│       │   └── world.js
+│       └── state
+│           ├── actionQueue.js
+│           ├── aiState.js
+│           └── botState.js
+├── frontend
+│   ├── public
+│   │   ├── app.js
+│   │   ├── index.html
+│   │   └── style.css
+│   └── server.js
+├── main.js
+├── package-lock.json
+├── package.json
+├── start.cmd
+└── treee.log

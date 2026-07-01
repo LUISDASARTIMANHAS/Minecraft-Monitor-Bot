@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io("ws://localhost:3080");
 
 const inventoryEl = document.getElementById("inventory");
 const chatBox = document.getElementById("chatBox");
@@ -27,6 +27,8 @@ chatInput.addEventListener("keydown", (e) => {
 socket.on("snapshot", (data) => {
   const system = data.system;
   const bot = data.bot;
+    console.log("[system socket]", system);
+    console.log("[bot stats]", bot);
 
   /*
   |--------------------------------------------------------------------------

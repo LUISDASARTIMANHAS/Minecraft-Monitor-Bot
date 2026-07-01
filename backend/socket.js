@@ -9,7 +9,11 @@ const io = new Server(port, {
 console.log(`[socket.io] Socket Aberto em ws//0.0.0.0:${port}`);
 
 io.on("connection", (socket) => {
-  console.log("[socket.io] Cliente conectado",socket);
+  console.log("Cliente conectado:", socket.id);
+
+    socket.onAny((event, ...args)=>{
+        console.log("Recebido:", event, args);
+    });
 
   /*
     |--------------------------------------------------------------------------
