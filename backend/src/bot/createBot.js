@@ -10,6 +10,7 @@ const pvp = require("mineflayer-pvp").plugin;
 const collectBlock = require("mineflayer-collectblock").plugin;
 const minerPlugin = require("./plugins/minerPlugin");
 const crafterPlugin = require("./plugins/crafterPlugin");
+const worldPlugin = require("./plugins/minerPlugin");
 const {
   StateTransition,
   BotStateMachine,
@@ -79,6 +80,7 @@ async function createBot() {
   |--------------------------------------------------------------------------
   */
   const plugins = [
+    worldPlugin,
     pathfinder,
     autoEat,
     pvp,
