@@ -10,7 +10,8 @@ const pvp = require("mineflayer-pvp").plugin;
 const collectBlock = require("mineflayer-collectblock").plugin;
 const minerPlugin = require("./plugins/minerPlugin");
 const crafterPlugin = require("./plugins/crafterPlugin");
-const worldPlugin = require("./plugins/minerPlugin");
+const worldPlugin = require("./plugins/worldPlugin");
+const antiAfk = require("./plugins/antiAfk");
 const {
   StateTransition,
   BotStateMachine,
@@ -24,8 +25,6 @@ const {
 const state = require("../state/botState");
 const config = require("../../config");
 
-const antiAfk = require("./plugins/antiAfk");
-const movement = require("./movement");
 const setupReconnect = require("./reconnect");
 const setupCommands = require("./commands");
 const brain = require("../ai/brain");
@@ -132,9 +131,6 @@ async function createBot() {
       startAt: 14,
       bannedFood: [],
     };
-
-    antiAfk(bot);
-    movement(bot);
     setupCommands(bot);
 
     bot.chat("Oi");
